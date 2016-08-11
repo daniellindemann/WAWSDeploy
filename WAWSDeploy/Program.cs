@@ -7,61 +7,71 @@ namespace WAWSDeploy
     class Program
     {
         static void Main(string[] args)
-        {
-            if (args.Length < 2)
-            {
-                WriteLine(@"WAWSDeploy version {0}", typeof(Program).Assembly.GetName().Version);
-                WriteLine(@"Usage: WAWSDeploy.exe c:\SomeFolder MySite.PublishSettings [flags]");
-                WriteLine(@"Options:");
-                WriteLine(@" /p  /password: provide the password if it's not in the profile");
-                WriteLine(@" /d  /DeleteExistingFiles: delete target files that don't exist at the source");
-                WriteLine(@" /au /AllowUntrusted: skip cert verification");
-                WriteLine(@" /v  /Verbose: Verbose mode");
-                WriteLine(@" /w  /WhatIf: don't actually perform the publishing");
-                WriteLine(@" /t  /TargetPath: the virtual or physical directory to deploy to");
-                WriteLine(@" /c  /cs: use checksum");
-                return;
-            }
+		{
+			ResourceAssemblyLoader.OnAssemblyResolve();
+			Start(args);
+		}
 
-            // parse the command line args
-            var command = Args.Configuration.Configure<DeploymentArgs>().CreateAndBind(args);
+		private static void Start(string[] args)
+		{
+			if (args.Length < 2)
+			{
+				WriteLine(@"WAWSDeploy version {0}", typeof(Program).Assembly.GetName().Version);
+				WriteLine(@"Usage: WAWSDeploy.exe c:\SomeFolder MySite.PublishSettings [flags]");
+				WriteLine(@"Options:");
+				WriteLine(@" /p  /password: provide the password if it's not in the profile");
+				WriteLine(@" /d  /DeleteExistingFiles: delete target files that don't exist at the source");
+				WriteLine(@" /au /AllowUntrusted: skip cert verification");
+				WriteLine(@" /v  /Verbose: Verbose mode");
+				WriteLine(@" /w  /WhatIf: don't actually perform the publishing");
+				WriteLine(@" /t  /TargetPath: the virtual or physical directory to deploy to");
+				WriteLine(@" /c  /cs: use checksum");
 
-            try
-            {
-                var webDeployHelper = new WebDeployHelper();
+				WriteLine(Environment.NewLine + @"Stand-alone version by Daniel Lindemann https://github.com/daniellindemann/WAWSDeploy");
+				WriteLine("Original version by David Ebbo https://github.com/davidebbo/WAWSDeploy");
 
-                webDeployHelper.DeploymentTraceEventHandler += Trace;
+				return;
+			}
+
+			// parse the command line args
+			var command = Args.Configuration.Configure<DeploymentArgs>().CreateAndBind(args);
+
+			try
+			{
+				var webDeployHelper = new WebDeployHelper();
+
+				webDeployHelper.DeploymentTraceEventHandler += Trace;
 
 
-                WriteLine("Starting deployment...");
-                DeploymentChangeSummary changeSummary = webDeployHelper.DeployContentToOneSite(
-                    command.Folder, 
-                    command.PublishSettingsFile, 
-                    command.Password, 
-                    command.AllowUntrusted,
-                    !command.DeleteExistingFiles,
-                    command.TraceLevel,
-                    command.WhatIf,
-                    command.TargetPath,
-                    command.UseChecksum
-                    );
+				WriteLine("Starting deployment...");
+				DeploymentChangeSummary changeSummary = webDeployHelper.DeployContentToOneSite(
+					command.Folder,
+					command.PublishSettingsFile,
+					command.Password,
+					command.AllowUntrusted,
+					!command.DeleteExistingFiles,
+					command.TraceLevel,
+					command.WhatIf,
+					command.TargetPath,
+					command.UseChecksum
+					);
 
-                WriteLine("BytesCopied: {0}", changeSummary.BytesCopied);
-                WriteLine("Added: {0}", changeSummary.ObjectsAdded);
-                WriteLine("Updated: {0}", changeSummary.ObjectsUpdated);
-                WriteLine("Deleted: {0}", changeSummary.ObjectsDeleted);
-                WriteLine("Errors: {0}", changeSummary.Errors);
-                WriteLine("Warnings: {0}", changeSummary.Warnings);
-                WriteLine("Total changes: {0}", changeSummary.TotalChanges);
-            }
-            catch (Exception e)
-            {
-                WriteLine("Deployment failed: {0}", e.Message);
-                Environment.ExitCode = 1;
-            }
-        }
+				WriteLine("BytesCopied: {0}", changeSummary.BytesCopied);
+				WriteLine("Added: {0}", changeSummary.ObjectsAdded);
+				WriteLine("Updated: {0}", changeSummary.ObjectsUpdated);
+				WriteLine("Deleted: {0}", changeSummary.ObjectsDeleted);
+				WriteLine("Errors: {0}", changeSummary.Errors);
+				WriteLine("Warnings: {0}", changeSummary.Warnings);
+				WriteLine("Total changes: {0}", changeSummary.TotalChanges);
+			}
+			catch (Exception e)
+			{
+				WriteLine("Deployment failed: {0}", e.Message);
+				Environment.ExitCode = 1;
+			}
+		}
 
-        static void Trace(object sender, DeploymentTraceEventArgs e)
+		static void Trace(object sender, DeploymentTraceEventArgs e)
         {
             Console.WriteLine(e.Message);
         }
